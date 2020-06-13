@@ -1,5 +1,5 @@
-@import "./Vars.scss";
-@import "./Media.scss";
+@import './Vars.scss';
+@import './Media.scss';
 
 body {
   margin: 0;
@@ -9,4 +9,27 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 5px grey;
+  border-radius: 10px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: rgb(81, 3, 238);
+  border-radius: 10px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(87, 98, 253);
 }

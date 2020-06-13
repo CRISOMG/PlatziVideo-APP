@@ -39,26 +39,23 @@ export const sendFavorite = (payload) => {
 
 export const getMyList = () => {
   return (dispatch) => {
-    window
-      .fetch('/user-movies')
-      .then((response) => response.json())
-      .then((data) => {
-        const { data: movieList } = data;
+    axios.get('/user-movies').then(({ data }) => {
+      const { data: movieList } = data;
 
-        movieList.forEach((userMovie) => {
-          window
-            .fetch(`/user-movies/${userMovie.movieId}`)
-            .then((res) => res.json())
-            .then((d) => {
-              const movie = {
-                ...d.movie,
-                _id: userMovie._id,
-              };
+      movieList.forEach((userMovie) => {
+        axios
+          .get(`/user-movies/${userMovie.movieId}`)
+          .then(({ data: item }) => {
+            const movie = {
+              ...item.movie,
+              _id: userMovie._id,
+            };
 
-              dispatch(setFavorite(movie));
-            });
-        });
+            dispatch(setFavorite(movie));
+          })
+          .catch((err) => console.log(err));
       });
+    });
   };
 };
 
@@ -115,6 +112,17 @@ export const loginUser = ({ email, password, rememberMe }, redirectUrl) => {
         window.location.href = redirectUrl;
       })
       .catch((err) => dispatch(setError(err)));
+  };
+};
+
+export const loginWithGoogle = () => {
+  return (dispatch, getState) => {
+    axios
+      .get('/auth/google-oauth')
+      .then(({ data }) => {
+        console.log(data);
+      })
+      .catch((err) => console.log(err));
   };
 };
 

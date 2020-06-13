@@ -146,8 +146,8 @@ app.post('/auth/sign-in', async function (req, res, next) {
         const { token, ...user } = data;
 
         res.cookie('token', token, {
-          httpOnly: true,
-          secure: true,
+          httpOnly: !(ENV === 'development'),
+          secure: !(ENV === 'development'),
         });
 
         res.status(200).json(user);
@@ -181,6 +181,35 @@ app.post('/auth/sign-up', async function (req, res, next) {
     next(error);
   }
 });
+
+// Google OAuth
+require('./utils/auth/strategies/oauth');
+
+app.get(
+  '/auth/google-oauth',
+  passport.authenticate('google-oauth', {
+    scope: ['email', 'profile', 'openid'],
+  })
+);
+
+app.get(
+  '/auth/google-oauth/callback',
+  passport.authenticate('google-oauth', { session: false }),
+  function (req, res, next) {
+    if (!req.user) {
+      next(boom.unauthorized());
+    }
+
+    const { token, ...user } = req.user;
+
+    res.cookie('token', token, {
+      httpOnly: false,
+      secure: false,
+    });
+
+    res.status(200).json(user);
+  }
+);
 
 // peliculas del usuario
 

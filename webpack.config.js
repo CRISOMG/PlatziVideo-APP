@@ -9,7 +9,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const isDev = process.env.ENV === 'development';
-const entry = ['./src/frontend/index.js'];
+const entry = ['@babel/polyfill', './src/frontend/index.js'];
 
 if (isDev)
   entry.push(

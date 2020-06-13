@@ -1,101 +1,115 @@
-import React, { useState, useRef } from "react";
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { loginUser } from "../actions";
+import { loginUser, loginWithGoogle } from '../actions';
 import '../assets/styles/components/Login.scss';
 import Header from '../components/Header';
 import googleIcon from '../assets/static/google-icon.png';
 import twitterIcon from '../assets/static/twitter-icon.png';
 
-const Login = props => {
+const Login = (props) => {
   const [form, setValues] = useState({
     email: '',
-    rememberMe: false
+    rememberMe: false,
   });
 
-  const updateInput = event => {
+  const updateInput = (event) => {
     setValues({
       ...form,
-      [event.target.name]: event.target.value
+      [event.target.name]: event.target.value,
     });
   };
 
-  const rememberMe = useRef(false)
+  const rememberMe = useRef(false);
 
-  const setRememberMe = event => {
+  const setRememberMe = () => {
     setValues({
       ...form,
-      rememberMe: rememberMe.current.checked
-    })
-  }
+      rememberMe: rememberMe.current.checked,
+    });
+  };
 
-  const handleSubmit = event => {
+  const handleSubmit = (event) => {
     event.preventDefault();
     props.loginUser(form, '/');
-  }
+  };
+
+  const handleLoginWithGoogle = async () => {
+    props.loginWithGoogle();
+  };
 
   return (
     <>
       <Header isLogin />
-      <section className="login">
-        <section className="login__container">
+      <section className='login'>
+        <section className='login__container'>
           <h2>Inicia sesión</h2>
-          <form className="login__container--form" onSubmit={handleSubmit}>
+          <form className='login__container--form' onSubmit={handleSubmit}>
             <input
-              name="email"
-              className="input"
-              type="text"
-              placeholder="Correo"
+              name='email'
+              className='input'
+              type='text'
+              placeholder='Correo'
               onChange={updateInput}
             />
             <input
-              name="password"
-              className="input"
-              type="password"
-              placeholder="Contraseña"
+              name='password'
+              className='input'
+              type='password'
+              placeholder='Contraseña'
               onChange={updateInput}
             />
-            <button className="button" type="submit">Iniciar sesión</button>
-            <div className="login__container--remember-me">
-              <label htmlFor="first_checkbox">
-                <input type="checkbox" ref={rememberMe} onClick={setRememberMe} />
+            <button className='button' type='submit'>
+              Iniciar sesión
+            </button>
+            <div className='login__container--remember-me'>
+              <label htmlFor='first_checkbox'>
+                <input
+                  type='checkbox'
+                  ref={rememberMe}
+                  onClick={setRememberMe}
+                />
                 Recuérdame
               </label>
-              <a href="/">Olvidé mi contraseña</a>
+              <a href='/'>Olvidé mi contraseña</a>
             </div>
           </form>
-          <section className="login__container--social-media">
-            <div>
-              <img src={googleIcon} alt="Google" />
+          <section className='login__container--social-media'>
+            <div
+              className='social-login_google'
+              onClick={handleLoginWithGoogle}
+            >
+              <img src={googleIcon} alt='Google' />
               {' '}
               Inicia sesión con Google
             </div>
-            <div>
-              <img src={twitterIcon} alt="Twitter" />
+            <div className='social-login_google'>
+              <img src={twitterIcon} alt='Twitter' />
               {' '}
               Inicia sesión con Twitter
             </div>
           </section>
-          <p className="login__container--register">
-            No tienes ninguna cuenta
+          <p className='login__container--register'>
+            No tienes ninguna cuenta 
             {' '}
-            <Link to="/register">
-              Regístrate
-            </Link>
+            <Link to='/register'>Regístrate</Link>
           </p>
         </section>
       </section>
     </>
   );
-}
+};
 
 const mapDispatchToProps = {
   loginUser,
+  loginWithGoogle,
 };
 
 Login.propTypes = {
   loginUser: PropTypes.func,
+  loginWithGoogle: PropTypes.func,
 };
 
 export default connect(null, mapDispatchToProps)(Login);
