@@ -67,7 +67,7 @@ const setResponse = (html, preloadedState, manifest) => {
           <meta http-equiv="X-UA-Compatible" content="ie=edge">
           <meta charset="utf-8" />
           <link rel="stylesheet" href="${mainStyles}" type="text/css"/>
-          <title>Platfix</title>
+          <title>PlatziVideo</title>
         </head>
         <body>
           <div id="app">${html}</div>
@@ -105,6 +105,7 @@ const renderApp = async (req, res) => {
       originals: movieList.data.filter(
         (movie) => movie.contentRating === 'G' && movie._id
       ),
+      playing: {},
     };
   } catch (error) {
     initialState = {

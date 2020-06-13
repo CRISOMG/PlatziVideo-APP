@@ -14,6 +14,7 @@ const Home = (props) => {
   useEffect(() => {
     props.getMyList();
   }, []);
+
   return (
     <React.Fragment>
       <Header />
@@ -34,7 +35,7 @@ const Home = (props) => {
           ))}
         </Carousel>
       </Categories>
-      <Categories title='Originales de Platfix'>
+      <Categories title='Originales de PlatziVideo'>
         <Carousel>
           {originals.map((item) => (
             <CarouselItem key={item._id} {...item} />
