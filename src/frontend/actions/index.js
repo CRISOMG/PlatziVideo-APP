@@ -38,24 +38,27 @@ export const sendFavorite = (payload) => {
 };
 
 export const getMyList = () => {
-  return (dispatch) => {
-    axios.get('/user-movies').then(({ data }) => {
-      const { data: movieList } = data;
+  return (dispatch, getState) => {
+    const state = getState();
+    if (state.myList.length === 0) {
+      axios.get('/user-movies').then(({ data }) => {
+        const { data: movieList } = data;
 
-      movieList.forEach((userMovie) => {
-        axios
-          .get(`/user-movies/${userMovie.movieId}`)
-          .then(({ data: item }) => {
-            const movie = {
-              ...item.movie,
-              _id: userMovie._id,
-            };
+        movieList.forEach((userMovie) => {
+          axios
+            .get(`/user-movies/${userMovie.movieId}`)
+            .then(({ data: item }) => {
+              const movie = {
+                ...item.movie,
+                _id: userMovie._id,
+              };
 
-            dispatch(setFavorite(movie));
-          })
-          .catch((err) => console.log(err));
+              dispatch(setFavorite(movie));
+            })
+            .catch((err) => dispatch(setError(err)));
+        });
       });
-    });
+    }
   };
 };
 
@@ -91,13 +94,15 @@ export const registerUser = (payload, redirectUrl) => {
 
 export const loginUser = ({ email, password, rememberMe }, redirectUrl) => {
   return (dispatch) => {
+    const auth = {
+      password,
+      username: email,
+    };
+    console.log(auth);
     axios({
       url: '/auth/sign-in',
       method: 'post',
-      auth: {
-        username: email,
-        password,
-      },
+      auth,
       data: {
         rememberMe,
       },
@@ -117,12 +122,14 @@ export const loginUser = ({ email, password, rememberMe }, redirectUrl) => {
 
 export const loginWithGoogle = () => {
   return (dispatch, getState) => {
-    axios
-      .get('/auth/google-oauth')
+    axios({
+      url: '/auth/google-oauth',
+      method: 'get',
+    })
       .then(({ data }) => {
         console.log(data);
       })
-      .catch((err) => console.log(err));
+      .catch((err) => console.log('error after request', err));
   };
 };
 
