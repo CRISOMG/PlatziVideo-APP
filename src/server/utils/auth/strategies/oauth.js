@@ -8,6 +8,7 @@ const boom = require('@hapi/boom');
 const { OAuth2Strategy } = require('passport-oauth');
 
 dotenv.config();
+
 const {
   API_URL,
   GOOGLE_CLIENT_ID,

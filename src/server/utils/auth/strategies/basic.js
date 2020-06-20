@@ -5,6 +5,7 @@ const axios = require('axios');
 const dotenv = require('dotenv');
 
 dotenv.config();
+
 const { API_URL, API_KEY_TOKEN } = process.env;
 
 passport.use(
@@ -22,7 +23,6 @@ passport.use(
           apiKeyToken: API_KEY_TOKEN,
         },
       });
-
       if (!data || status !== 200) {
         return cb(boom.unauthorized(), false);
       }
