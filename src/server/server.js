@@ -2,9 +2,8 @@
 /* eslint-disable func-names */
 /* eslint-disable global-require */
 import express from 'express';
-import dotenv from 'dotenv';
 import helmet from 'helmet';
-import webpack from 'webpack';
+import webpack, { WebpackOptionsValidationError } from 'webpack';
 import React from 'react';
 
 import { renderToString } from 'react-dom/server';
@@ -18,29 +17,31 @@ import cookieParser from 'cookie-parser';
 import boom from '@hapi/boom';
 import axios from 'axios';
 
+import cors from 'cors';
+import debug from 'debug';
 import reducer from '../frontend/reducers';
 import Layout from '../frontend/components/Layout';
 import serverRoutes from '../frontend/routes/serverRoutes';
 import getManifest from './getManifest';
 
-const app = express();
+import { config } from './config';
 
-dotenv.config();
-const { ENV, PORT, API_URL } = process.env;
+const app = express();
 
 app.use(express.json());
 app.use(cookieParser('secret'));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(cors());
 
 require('./utils/auth/strategies/basic');
 
-if (ENV === 'development') {
+if (config.env === 'development') {
   const webPackConfig = require('../../webpack.config');
   const webpackDevMiddleware = require('webpack-dev-middleware');
   const webpackHotMiddleware = require('webpack-hot-middleware');
   const compiler = webpack(webPackConfig);
-  const serverConfig = { port: PORT, hot: true };
+  const serverConfig = { port: config.port, hot: true };
   app.use(webpackDevMiddleware(compiler, serverConfig));
   app.use(webpackHotMiddleware(compiler));
 } else {
@@ -68,17 +69,15 @@ const setResponse = (html, preloadedState, manifest) => {
           <meta charset="utf-8" />
           <link rel="stylesheet" href="${mainStyles}" type="text/css"/>
           <title>PlatziVideo</title>
-        </head>
-        <body>
+          </head>
+          <body>
           <div id="app">${html}</div>
-          <script id="preloadedState">
-            window.__PRELOADED_STATE__ = ${JSON.stringify(
-              preloadedState
-            ).replace(/</g, '\\u003c')}
-          </script>
-          <script src="${mainBuild}" type="text/javascript"></script>
-          <script src="${vendorBuild}" type="text/javascript"></script>
-        </body>
+            <script id="preloadedState">
+            window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState).replace(/</g, '\\u003c')}
+            </script>
+            <script src="${mainBuild}" type="text/javascript"></script>
+            <script src="${vendorBuild}" type="text/javascript"></script>
+          </body>
       </html>`;
 };
 
@@ -87,8 +86,8 @@ const renderApp = async (req, res) => {
   const { token, email, name, id } = req.cookies;
 
   try {
-    const { data: movieList } = await axios({
-      url: `${API_URL}/api/movies`,
+    const { data: platziMovies } = await axios({
+      url: `${config.apiUrl}/api/movies`,
       headers: { authorization: `Bearer ${token}` },
     });
 
@@ -99,12 +98,8 @@ const renderApp = async (req, res) => {
         id,
       },
       myList: [],
-      trends: movieList.data.filter(
-        (movie) => movie.contentRating === 'PG' && movie._id
-      ),
-      originals: movieList.data.filter(
-        (movie) => movie.contentRating === 'G' && movie._id
-      ),
+      trends: platziMovies.data.filter((movie) => movie.contentRating === 'PG' && movie._id),
+      originals: platziMovies.data.filter((movie) => movie.contentRating === 'G' && movie._id),
       playing: {},
     };
   } catch (error) {
@@ -124,7 +119,7 @@ const renderApp = async (req, res) => {
       <StaticRouter location={req.url} context={{}}>
         <Layout>{renderRoutes(serverRoutes(isLogged))}</Layout>
       </StaticRouter>
-    </Provider>
+    </Provider>,
   );
 
   res.send(setResponse(html, preloadedState, req.hashManifest));
@@ -136,19 +131,23 @@ app.post('/auth/sign-in', async function (req, res, next) {
   passport.authenticate('basic', function (err, data) {
     try {
       if (err || !data) {
-        next(boom.unauthorized());
+        return next(boom.unauthorized());
       }
 
       req.login(data, { session: false }, async function (error) {
         if (error) {
-          next(error);
+          return next(error);
         }
 
         const { token, ...user } = data;
 
+        console.log(data);
+
+        if (!token) throw new Error('Data not have token');
+
         res.cookie('token', token, {
-          httpOnly: !(ENV === 'development'),
-          secure: !(ENV === 'development'),
+          httpOnly: !(config.env === 'development'),
+          secure: !(config.env === 'development'),
         });
 
         res.status(200).json(user);
@@ -164,7 +163,7 @@ app.post('/auth/sign-up', async function (req, res, next) {
 
   try {
     const userData = await axios({
-      url: `${API_URL}/api/auth/sign-up`,
+      url: `${config.apiUrl}/api/auth/sign-up`,
       method: 'post',
       data: {
         email: user.email,
@@ -183,33 +182,71 @@ app.post('/auth/sign-up', async function (req, res, next) {
   }
 });
 
-// Google OAuth
-require('./utils/auth/strategies/oauth');
+// // Google OAuth
+// require('./utils/auth/strategies/oauth');
+
+// app.get(
+//   '/auth/google-oauth',
+//   passport.authenticate('google-oauth', {
+//     scope: ['email', 'profile', 'openid'],
+//   })
+// );
+
+// app.get(
+//   '/auth/google-oauth/callback',
+//   passport.authenticate('google-oauth', {
+//     session: false,
+//     successRedirect: '/',
+//   }),
+//   function (req, res, next) {
+//     if (!req.user) {
+//       next(boom.unauthorized());
+//     }
+
+//     const { token, ...user } = req.user;
+
+//     res.cookie('token', token, {
+//       httpOnly: !(config.env === 'development'),
+//       secure: !(config.env === 'development'),
+//     });
+
+//     res.status(200).json(user);
+//   }
+// );
+
+// Google Strategies
+require('./utils/auth/strategies/google');
 
 app.get(
-  '/auth/google-oauth',
-  passport.authenticate('google-oauth', {
+  '/auth/google',
+  passport.authenticate('google', {
     scope: ['email', 'profile', 'openid'],
-  })
+  }),
 );
 
 app.get(
-  '/auth/google-oauth/callback',
-  passport.authenticate('google-oauth', { session: false }),
+  '/auth/google/callback',
+  passport.authenticate('google', {
+    session: false,
+    // successRedirect: '/',
+  }),
   function (req, res, next) {
     if (!req.user) {
       next(boom.unauthorized());
     }
 
-    const { token, ...user } = req.user;
+    const { token, user } = req.user;
 
     res.cookie('token', token, {
-      httpOnly: false,
-      secure: false,
+      httpOnly: !(config.env === 'development'),
+      secure: !(config.env === 'development'),
     });
 
-    res.status(200).json(user);
-  }
+    res.cookie('id', user.id);
+    res.cookie('name', user.name);
+    res.cookie('email', user.email);
+    res.redirect('/');
+  },
 );
 
 // peliculas del usuario
@@ -222,7 +259,7 @@ app.get('/user-movies', async function (req, res, next) {
       data: { data: movieList },
       status,
     } = await axios({
-      url: `${API_URL}/api/user-movies?userId=${id}`,
+      url: `${config.apiUrl}/api/user-movies?userId=${id}`,
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -241,7 +278,7 @@ app.get('/user-movies/:movieId', async function (req, res, next) {
     const { token } = req.cookies;
 
     const { data: movie, status } = await axios({
-      url: `${API_URL}/api/movies/${movieId}`,
+      url: `${config.apiUrl}/api/movies/${movieId}`,
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -264,7 +301,7 @@ app.post('/user-movies', async function (req, res, next) {
     };
 
     const { data, status } = await axios({
-      url: `${API_URL}/api/user-movies`,
+      url: `${config.apiUrl}/api/user-movies`,
       headers: { Authorization: `Bearer ${token}` },
       method: 'post',
       data: userMovie,
@@ -286,7 +323,7 @@ app.delete('/user-movies/:userMovieId', async function (req, res, next) {
     const { token } = req.cookies;
 
     const { data, status } = await axios({
-      url: `${API_URL}/api/user-movies/${userMovieId}`,
+      url: `${config.apiUrl}/api/user-movies/${userMovieId}`,
       headers: { Authorization: `Bearer ${token}` },
       method: 'delete',
     });
@@ -306,7 +343,16 @@ app.delete('/user-movies/:userMovieId', async function (req, res, next) {
 
 app.get('*', renderApp);
 
-app.listen(PORT, (err) => {
-  if (err) console.log(err);
-  else console.log(`${ENV} server running on Port ${PORT}`);
+const debugServer = debug('app:server');
+const debugError = debug('app:error');
+
+app.use(function (error, req, res, next) {
+  debugError(error.message);
+
+  res.status(error.output.statusCode).json(error.message);
+});
+
+app.listen(config.port, (err) => {
+  if (err) debugError(err);
+  else debugServer(`${config.env} server running on Port ${config.port}`);
 });

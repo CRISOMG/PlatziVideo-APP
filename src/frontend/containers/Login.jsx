@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-one-expression-per-line */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
@@ -7,7 +8,7 @@ import { loginUser, loginWithGoogle } from '../actions';
 import '../assets/styles/components/Login.scss';
 import Header from '../components/Header';
 import googleIcon from '../assets/static/google-icon.png';
-import twitterIcon from '../assets/static/twitter-icon.png';
+// import twitterIcon from '../assets/static/twitter-icon.png';
 
 const Login = (props) => {
   const [form, setValues] = useState({
@@ -37,7 +38,16 @@ const Login = (props) => {
   };
 
   const handleLoginWithGoogle = async () => {
-    props.loginWithGoogle();
+    console.log('handleLoginWithGoogle');
+    // props.loginWithGoogle();
+
+    window.location.href = '/auth/google';
+
+    // window.open(
+    //   '/auth/google',
+    //   'Google Authentication',
+    //   'toolbar=0,scrollbars=0,location=0,statusbar=0,menubar=0,resizable=1,width=500,height=600'
+    // );
   };
 
   return (
@@ -64,7 +74,7 @@ const Login = (props) => {
             <button className='button' type='submit'>
               Iniciar sesión
             </button>
-            <div className='login__container--remember-me'>
+            {/* <div className='login__container--remember-me'>
               <label htmlFor='first_checkbox'>
                 <input
                   type='checkbox'
@@ -74,27 +84,28 @@ const Login = (props) => {
                 Recuérdame
               </label>
               <a href='/'>Olvidé mi contraseña</a>
-            </div>
+            </div> */}
           </form>
           <section className='login__container--social-media'>
             <div
-              className='social-login_google'
+              className='social--login_google'
               onClick={handleLoginWithGoogle}
             >
-              <img src={googleIcon} alt='Google' />
-              {' '}
-              Inicia sesión con Google
+              <img
+                src={googleIcon}
+                alt='Google'
+                onClick={handleLoginWithGoogle}
+              />
+              <a>Inicia sesión con Google</a>
             </div>
-            <div className='social-login_google'>
-              <img src={twitterIcon} alt='Twitter' />
-              {' '}
-              Inicia sesión con Twitter
+            <div className='social--login_twitter'>
+              {/* <div className='g-signin2' data-onsuccess='onSignIn' /> */}
+              {/* <img src={twitterIcon} alt='Twitter' />
+              <p>Inicia sesión con Twitter</p> */}
             </div>
           </section>
           <p className='login__container--register'>
-            No tienes ninguna cuenta 
-            {' '}
-            <Link to='/register'>Regístrate</Link>
+            No tienes ninguna cuenta <Link to='/register'>Regístrate</Link>
           </p>
         </section>
       </section>
